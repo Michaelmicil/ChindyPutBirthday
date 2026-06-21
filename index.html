@@ -138,6 +138,7 @@ button{
     font-size:20px;
     animation:float linear forwards;
     pointer-events:none;
+    z-index:1000;
 }
 
 @keyframes float{
@@ -153,12 +154,63 @@ button{
     height:14px;
     animation:fall linear forwards;
     box-shadow:0 0 4px rgba(255,255,255,.4);
+    z-index:1000;
 }
 
 @keyframes fall{
     to{
         transform:translateY(110vh) rotate(720deg);
         opacity:0;
+    }
+}
+
+.ambient-confetti{
+    filter:blur(.3px);
+    box-shadow:0 0 6px rgba(255,255,255,.5);
+}
+
+.firework-particle{
+    position:fixed;
+    border-radius:50%;
+    pointer-events:none;
+    animation:firework-burst 1.1s ease-out forwards;
+    box-shadow:0 0 8px 1px currentColor;
+    z-index:1000;
+}
+
+@keyframes firework-burst{
+    0%{
+        transform:translate(0,0) scale(1);
+        opacity:1;
+    }
+    70%{
+        opacity:1;
+    }
+    100%{
+        transform:translate(var(--fx),var(--fy)) scale(.3);
+        opacity:0;
+    }
+}
+
+.firework-trail{
+    position:fixed;
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    pointer-events:none;
+    box-shadow:0 0 10px 2px currentColor;
+    animation:firework-rise .7s ease-out forwards;
+    z-index:1000;
+}
+
+@keyframes firework-rise{
+    0%{
+        transform:translateY(0);
+        opacity:1;
+    }
+    100%{
+        transform:translateY(var(--rise));
+        opacity:.9;
     }
 }
 
@@ -291,6 +343,7 @@ const dotsEl = document.getElementById("slideshowDots");
 
 let slideIndex = 0;
 let slideTimer = null;
+let ambientConfettiTimer = null;
 const SLIDE_INTERVAL = 2000;
 
 function buildSlideshow(){
@@ -341,6 +394,17 @@ function stopSlideshow(){
 
 let scale = 1;
 
+let musicStarted = false;
+
+function startMusicOnce(){
+    if(musicStarted) return;
+    musicStarted = true;
+
+    music.play().catch(err=>{
+        console.log("Audio gagal diputar:", err);
+    });
+}
+
 const initialNoLeft = "60%";
 const initialNoTop = "20px";
 
@@ -367,6 +431,8 @@ function moveNo(){
 // Mouse mendekat
 document.addEventListener("mousemove",(e)=>{
 
+    startMusicOnce();
+
     const rect = noBtn.getBoundingClientRect();
 
     const dx = e.clientX - (rect.left + rect.width/2);
@@ -379,12 +445,19 @@ document.addEventListener("mousemove",(e)=>{
     }
 });
 
-noBtn.addEventListener("mouseenter", moveNo);
+noBtn.addEventListener("mouseenter", ()=>{
+    startMusicOnce();
+    moveNo();
+});
 
 noBtn.addEventListener("touchstart",(e)=>{
     e.preventDefault();
+    startMusicOnce();
     moveNo();
 });
+
+document.addEventListener("touchstart", startMusicOnce, { once:true });
+document.addEventListener("click", startMusicOnce, { once:true });
 
 // Klik YES
 yesBtn.addEventListener("click",()=>{
@@ -399,6 +472,7 @@ yesBtn.addEventListener("click",()=>{
     megaConfetti();
     megaHearts();
     startSlideshow();
+    startAmbientConfetti();
 });
 
 // Klik BACK
@@ -417,11 +491,93 @@ backBtn.addEventListener("click",()=>{
     noBtn.style.top = initialNoTop;
 
     stopSlideshow();
+    stopAmbientConfetti();
 
     document
-        .querySelectorAll(".confetti,.heart")
+        .querySelectorAll(".confetti,.heart,.firework-particle,.firework-trail")
         .forEach(el=>el.remove());
 });
+
+// Ambient fireworks - launch + radial burst on result page
+function createFireworkExplosion(x, y, hue){
+
+    const particleCount = 28 + Math.floor(Math.random()*14);
+
+    for(let i=0; i<particleCount; i++){
+
+        const angle = (Math.PI*2 * i) / particleCount + Math.random()*0.3;
+        const distance = 60 + Math.random()*90;
+
+        const fx = Math.cos(angle) * distance;
+        const fy = Math.sin(angle) * distance;
+
+        let p = document.createElement("div");
+        p.className = "firework-particle";
+
+        const size = Math.random()*4 + 3;
+        p.style.width = size + "px";
+        p.style.height = size + "px";
+
+        p.style.left = x + "px";
+        p.style.top = y + "px";
+
+        const particleHue = hue + (Math.random()*40 - 20);
+        p.style.background = `hsl(${particleHue},100%,65%)`;
+        p.style.color = `hsl(${particleHue},100%,65%)`;
+
+        p.style.setProperty("--fx", fx + "px");
+        p.style.setProperty("--fy", fy + "px");
+
+        p.style.animationDuration = (Math.random()*0.5 + 0.9) + "s";
+
+        document.body.appendChild(p);
+
+        setTimeout(()=>{
+            p.remove();
+        }, 1600);
+    }
+}
+
+function launchFirework(){
+
+    const x = Math.random()*70 + 15 + "vw";
+    const launchX = parseFloat(x) * window.innerWidth / 100;
+
+    const groundY = window.innerHeight;
+    const burstY = window.innerHeight * (Math.random()*0.35 + 0.15);
+
+    const hue = Math.random()*360;
+
+    let trail = document.createElement("div");
+    trail.className = "firework-trail";
+    trail.style.left = launchX + "px";
+    trail.style.top = groundY + "px";
+    trail.style.background = `hsl(${hue},100%,70%)`;
+    trail.style.color = `hsl(${hue},100%,70%)`;
+    trail.style.setProperty("--rise", -(groundY - burstY) + "px");
+
+    document.body.appendChild(trail);
+
+    setTimeout(()=>{
+        trail.remove();
+        createFireworkExplosion(launchX, burstY, hue);
+    }, 700);
+}
+
+function startAmbientConfetti(){
+    launchFirework();
+    ambientConfettiTimer = setInterval(()=>{
+        launchFirework();
+        if(Math.random() < 0.3){
+            setTimeout(launchFirework, 350);
+        }
+    }, 900);
+}
+
+function stopAmbientConfetti(){
+    clearInterval(ambientConfettiTimer);
+    ambientConfettiTimer = null;
+}
 
 // Confetti
 function megaConfetti(){
