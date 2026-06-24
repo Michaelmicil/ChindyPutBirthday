@@ -223,6 +223,7 @@ button{
     overflow:hidden;
     box-shadow:0 12px 35px rgba(0,0,0,.35);
     background:rgba(0,0,0,.2);
+    z-index:1001;
 }
 
 .slideshow img{
@@ -264,6 +265,44 @@ button{
     background:#fff;
     transform:scale(1.3);
 }
+.emoji-btn{
+    cursor:pointer;
+    display:inline-block;
+    transition:transform .15s ease;
+    user-select:none;
+}
+
+.emoji-btn:hover{
+    transform:scale(1.3);
+}
+
+.emoji-btn:active{
+    transform:scale(.9);
+}
+
+.emoji-popup{
+    position:fixed;
+    pointer-events:none;
+    font-size:2.5rem;
+    z-index:2000;
+    animation:emoji-pop 1.1s ease-out forwards;
+    white-space:nowrap;
+}
+
+@keyframes emoji-pop{
+    0%{
+        transform:translateY(0) scale(.5);
+        opacity:1;
+    }
+    40%{
+        transform:translateY(-60px) scale(1.4);
+        opacity:1;
+    }
+    100%{
+        transform:translateY(-140px) scale(1);
+        opacity:0;
+    }
+}
 </style>
 </head>
 
@@ -271,7 +310,7 @@ button{
 
 <div class="card">
 
-    <h1>🎂 Happy Birthday Chindyyy 🎂</h1>
+    <h1><span class="emoji-btn">🎂</span> Happy Birthday Chindyyy <span class="emoji-btn">🎂</span></h1>
 
     <p>
         I know that today is a very special day for you <br>
@@ -291,24 +330,28 @@ button{
 
 <div id="result">
 
-    <h2> 🥳Congratulation About Being Older 🥳 </h2>
+    <h2><span class="emoji-btn">🥳</span> Congratulation About Being Older <span class="emoji-btn">🥳</span></h2>
 
     <p>
-        Aku ikut bahagia melihat senyummu hari ini.<br>
-        Semoga semua impianmu menjadi nyata ✨
+       Happy 26th birthday, Chindy! I'm so incredibly grateful to have you in my life. Wishing you a year ahead that's filled with endless love, pure happiness, and deep fulfillment.<br>
+
+​I also want to take a moment to be completely honest and say I'm truly sorry that our communication hasn't been as good as it should be lately. I know things might have felt distant or off for a while, and it genuinely hurts me to think that it might have made you feel upset or frustrated with me.
+​Please trust me when I say that I care deeply, and I really want this to work. I truly believe we can figure things out, manage our differences, and find our rhythm again.
+​More than anything, I want to see you smile today. May all your dreams and aspirations come true, and may our bond grow stronger with each passing day. Forever and always💕🎉.<br>
+         ✨
     </p>
 
     <div class="slideshow" id="slideshow"></div>
     <div class="slideshow-dots" id="slideshowDots"></div>
 
-    <h1>🎉💖🥳</h1>
+    <h1><span class="emoji-btn">🎉</span><span class="emoji-btn">💖</span><span class="emoji-btn">🥳</span></h1>
 
     <button id="backBtn">🔙 Kembali</button>
 
 </div>
 
 <audio id="music" loop>
-    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" type="audio/mpeg">
+    <source src="https://www.singing-bell.com/wp-content/uploads/2016/03/Happy-Birthday-Song-cheerful-Singing-Bell.mp3" type="audio/mpeg">
 </audio>
 
 <script>
@@ -501,7 +544,7 @@ backBtn.addEventListener("click",()=>{
 // Ambient fireworks - launch + radial burst on result page
 function createFireworkExplosion(x, y, hue){
 
-    const particleCount = 28 + Math.floor(Math.random()*14);
+    const particleCount = 14 + Math.floor(Math.random()*8);
 
     for(let i=0; i<particleCount; i++){
 
@@ -540,11 +583,14 @@ function createFireworkExplosion(x, y, hue){
 
 function launchFirework(){
 
-    const x = Math.random()*70 + 15 + "vw";
+    const leftSide = Math.random() < 0.5;
+    const x = leftSide
+        ? (Math.random()*18 + 4) + "vw"
+        : (Math.random()*18 + 78) + "vw";
     const launchX = parseFloat(x) * window.innerWidth / 100;
 
     const groundY = window.innerHeight;
-    const burstY = window.innerHeight * (Math.random()*0.35 + 0.15);
+    const burstY = window.innerHeight * (Math.random()*0.3 + 0.1);
 
     const hue = Math.random()*360;
 
@@ -568,10 +614,7 @@ function startAmbientConfetti(){
     launchFirework();
     ambientConfettiTimer = setInterval(()=>{
         launchFirework();
-        if(Math.random() < 0.3){
-            setTimeout(launchFirework, 350);
-        }
-    }, 900);
+    }, 2200);
 }
 
 function stopAmbientConfetti(){
@@ -582,11 +625,11 @@ function stopAmbientConfetti(){
 // Confetti
 function megaConfetti(){
 
-    for(let wave=0; wave<16; wave++){
+    for(let wave=0; wave<6; wave++){
 
         setTimeout(()=>{
 
-            for(let i=0; i<450; i++){
+            for(let i=0; i<60; i++){
 
                 let c = document.createElement("div");
 
@@ -623,7 +666,7 @@ function megaConfetti(){
 // Hearts
 function megaHearts(){
 
-    for(let i=0; i<700; i++){
+    for(let i=0; i<150; i++){
 
         setTimeout(()=>{
 
@@ -651,6 +694,23 @@ function megaHearts(){
     }
 }
 
+// Emoji popup on click
+document.querySelectorAll(".emoji-btn").forEach(el=>{
+    el.addEventListener("click",(e)=>{
+        e.stopPropagation();
+
+        const rect = el.getBoundingClientRect();
+        const popup = document.createElement("div");
+        popup.className = "emoji-popup";
+        popup.textContent = el.textContent;
+        popup.style.left = (rect.left + rect.width/2 - 20) + "px";
+        popup.style.top = (rect.top - 10) + "px";
+
+        document.body.appendChild(popup);
+        setTimeout(()=>popup.remove(), 1200);
+    });
+});
+
 // Background hearts
 setInterval(()=>{
 
@@ -671,7 +731,7 @@ setInterval(()=>{
         h.remove();
     },10000);
 
-},500);
+},1100);
 
 </script>
 
